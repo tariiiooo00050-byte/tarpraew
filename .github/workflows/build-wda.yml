@@ -1,0 +1,29 @@
+# สร้าง WebDriverAgentRunner-Runner.ipa (ยังไม่เซ็น) บน GitHub Actions (macOS ฟรี) — ไม่ต้องมี Mac
+name: Build WDA ipa
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Clone appium/WebDriverAgent
+        run: git clone --depth 1 https://github.com/appium/WebDriverAgent.git wda
+      - name: Build for iOS device (no signing)
+        working-directory: wda
+        run: |
+          xcodebuild build-for-testing \
+            -project WebDriverAgent.xcodeproj \
+            -scheme WebDriverAgentRunner \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+      - name: Package ipa
+        working-directory: wda
+        run: |
+          rm -rf Payload && mkdir Payload
+          cp -R build/Build/Products/Debug-iphoneos/WebDriverAgentRunner-Runner.app Payload/
+          zip -r ../WebDriverAgentRunner-Runner.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WebDriverAgentRunner-Runner
+          path: WebDriverAgentRunner-Runner.ipa
